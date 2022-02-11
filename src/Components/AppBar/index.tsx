@@ -44,7 +44,15 @@ const AppBar = () => {
                     </Typography>
                     <Box sx={{ flexGrow: 1, display: { md: "flex" } }}></Box>
                     {user && (
-                        <Box sx={{ flexGrow: 0 }}>
+                        <Box sx={{ flexGrow: 0, display: "flex", alignItems: "center" }}>
+                            <Typography
+                                variant="subtitle1"
+                                noWrap
+                                component="div"
+                                sx={{ mr: 2, display: { md: "flex" } }}
+                            >
+                                {user.getName()}
+                            </Typography>
                             <Tooltip title="Open settings">
                                 <IconButton onClick={(e) => handleOpenUserMenu(e.currentTarget)} sx={{ p: 0 }}>
                                     <Avatar alt={user.getName()} src={user.getAvatar()} />
