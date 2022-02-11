@@ -19,18 +19,18 @@ const UserLoginModal: React.FunctionComponent = () => {
 
     const {
         onLogin,
-        values: { uid, isLoading, error },
+        values: { user, isLoading, error },
     } = useAuthContext();
 
     React.useEffect(() => {
-        if (uid) {
+        if (user) {
             // User has logged in, because of which there is uid
             setModalOpen(false);
             return;
         }
 
         setModalOpen(true);
-    }, [uid]);
+    }, [user]);
 
     return (
         <Modal open={isModalOpen} aria-labelledby="modal-modal-title" aria-describedby="modal-modal-description">

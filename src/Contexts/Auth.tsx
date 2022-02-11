@@ -1,17 +1,18 @@
+import { CometChat } from "@cometchat-pro/chat";
 import React from "react";
 import { authKey, MyCometChat } from "../CometChat";
 
 interface AuthContextData {
-    values: { uid: string | null; isLoading: boolean; error: unknown };
+    values: { isLoading: boolean; error: unknown; user: CometChat.User | null };
     // eslint-disable-next-line no-unused-vars
     onLogin: (value: string) => void;
 }
 
 const initialState: AuthContextData = {
     values: {
-        uid: null,
         isLoading: false,
         error: null,
+        user: null,
     },
     onLogin: () => {},
 };
@@ -25,23 +26,22 @@ export const AuthContextProvider: React.FunctionComponent = ({ children }) => {
 
     const onLogin = async (uid: string) => {
         setState({
-            uid: null,
+            user: null,
             isLoading: true,
             error: null,
         });
 
         try {
             const response = await MyCometChat.login(uid, authKey);
-            console.log(response);
             setState({
-                uid,
+                user: response,
                 isLoading: false,
                 error: null,
             });
         } catch (error) {
             console.error(error);
             setState({
-                uid: null,
+                user: null,
                 isLoading: false,
                 error,
             });
