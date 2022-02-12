@@ -2,14 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Attach to node",
-      "port": 9229,
-      "request": "attach",
-      "restart": true,
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "type": "pwa-node"
+      "type": "pwa-msedge",
+      "request": "launch",
+      "name": "Launch Edge against localhost",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
     }
   ],
   "compounds": []

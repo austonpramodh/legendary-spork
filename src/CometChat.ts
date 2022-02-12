@@ -19,9 +19,4 @@ export const initCometChat = () =>
         },
     );
 
-// Export class MyCometChat {
-//     constructor() {
-//         console.log("Hi there");
-//     }
-// }
 export const MyCometChat = CometChat;

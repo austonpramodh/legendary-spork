@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { CometChat } from "@cometchat-pro/chat";
 import {
     Avatar,
@@ -8,23 +9,36 @@ import {
     ListItemAvatar,
     ListItemText,
     ListSubheader,
+    Typography,
     // Typography,
 } from "@mui/material";
 import React from "react";
 import { MyCometChat } from "../../CometChat";
+import { useActiveConversationContext } from "../../Contexts/ActiveConversation";
 import { useAuthContext } from "../../Contexts/Auth";
+import { useConversationsListContext } from "../../Contexts/Conversation";
 
 interface ConversationProps {
     // User: CometChat.User;
     isTyping: boolean;
-    // eslint-disable-next-line no-unused-vars
+
     onClick?: (id: string) => void;
     name: string;
     avatar: string;
     id: string;
+    hasUnreadMessage: boolean;
+    lastMessage: string;
 }
 
-const Conversation: React.FunctionComponent<ConversationProps> = ({ isTyping, onClick, avatar, id, name }) => {
+const Conversation: React.FunctionComponent<ConversationProps> = ({
+    isTyping,
+    onClick,
+    avatar,
+    id,
+    name,
+    hasUnreadMessage,
+    lastMessage,
+}) => {
     return (
         <ListItem alignItems="flex-start" onClick={() => (onClick ? onClick(id) : null)}>
             <ListItemAvatar>
@@ -34,18 +48,28 @@ const Conversation: React.FunctionComponent<ConversationProps> = ({ isTyping, on
                 primary={name}
                 secondary={
                     isTyping ? (
-                        "Typing...."
+                        <Typography
+                            sx={{ display: "inline", fontWeight: 500 }}
+                            component="span"
+                            variant="body2"
+                            color="text.secondary"
+                        >
+                            Typing....
+                        </Typography>
                     ) : (
                         <React.Fragment>
-                            {/* <Typography
-                                sx={{ display: "inline" }}
-                                component="span"
-                                variant="body2"
-                                color="text.primary"
-                            >
-                                Ali Connors
-                            </Typography> */}
-                            {" - I'll be in your neighborhood doing errands this…"}
+                            {hasUnreadMessage ? (
+                                <Typography
+                                    sx={{ display: "inline", fontWeight: 500 }}
+                                    component="span"
+                                    variant="body2"
+                                    color="text.primary"
+                                >
+                                    {lastMessage}
+                                </Typography>
+                            ) : (
+                                lastMessage
+                            )}
                         </React.Fragment>
                     )
                 }
@@ -55,11 +79,11 @@ const Conversation: React.FunctionComponent<ConversationProps> = ({ isTyping, on
 };
 
 const ConversationsList = () => {
-    const [usersList, setUsersList] = React.useState<CometChat.User[]>([]);
-
-    const [groupsList, setGroupsList] = React.useState<CometChat.Group[]>([]);
-
     const [typingUsers, setTypingUsers] = React.useState<Record<string, boolean>>({});
+
+    const { conversationsList } = useConversationsListContext();
+
+    const { onSelectConversation } = useActiveConversationContext();
 
     const {
         values: { user },
@@ -70,32 +94,7 @@ const ConversationsList = () => {
             // Not yet logged in
             return;
 
-        const limit = 30;
-        const usersRequest = new MyCometChat.UsersRequestBuilder().setLimit(limit).build();
-
-        usersRequest.fetchNext().then(
-            (userList) => {
-                console.log("User list received:", userList);
-                setUsersList(userList);
-            },
-            (error) => {
-                console.log("User list fetching failed with error:", error);
-            },
-        );
-
-        const groupsRequest = new MyCometChat.GroupsRequestBuilder().setLimit(limit).build();
-
-        groupsRequest.fetchNext().then(
-            (groupList) => {
-                console.log("Groups list fetched successfully", groupList);
-                setGroupsList(groupList);
-            },
-            (error) => {
-                console.log("Groups list fetching failed with error", error);
-            },
-        );
-
-        const listenerId = "UNIQUE_LITENER_ID";
+        const typingIndicatorListnerId = "typingIndicatorListnerId";
 
         interface TypingIndicator {
             sender: CometChat.User;
@@ -103,10 +102,11 @@ const ConversationsList = () => {
             receiverType: string;
         }
 
-        MyCometChat.addMessageListener(
-            listenerId,
-            new MyCometChat.MessageListener({
+        CometChat.addMessageListener(
+            typingIndicatorListnerId,
+            new CometChat.MessageListener({
                 onTypingStarted: (typingIndicator: TypingIndicator) => {
+                    console.log("Typing started --- ", typingIndicator);
                     if (typingIndicator.receiverId.toLowerCase() === user.getUid().toLowerCase())
                         // Only update states if the typing is for me
                         setTypingUsers((typingUsers) => ({
@@ -115,6 +115,7 @@ const ConversationsList = () => {
                         }));
                 },
                 onTypingEnded: (typingIndicator: TypingIndicator) => {
+                    console.log("Typing ended --- ", typingIndicator);
                     if (typingIndicator.receiverId.toLowerCase() === user.getUid().toLowerCase())
                         setTypingUsers((typingUsers) => ({
                             ...typingUsers,
@@ -125,7 +126,7 @@ const ConversationsList = () => {
         );
 
         return () => {
-            MyCometChat.removeMessageListener(listenerId);
+            CometChat.removeMessageListener(typingIndicatorListnerId);
         };
     }, [user?.getUid()]);
 
@@ -137,51 +138,36 @@ const ConversationsList = () => {
                 sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
                 subheader={
                     <ListSubheader component="div" id="nested-list-subheader">
-                        Users
+                        Conversations
                     </ListSubheader>
                 }
             >
-                {usersList.map((user, index) => {
+                {conversationsList.map((conversation, index) => {
+                    const lastMessage =
+                        conversation.getLastMessage().type === "text"
+                            ? ((conversation.getLastMessage() as CometChat.TextMessage).getData().text as string)
+                            : "Message Type not integrated!";
+                    console.log(lastMessage);
+                    const icon =
+                        conversation.getConversationType() === "group"
+                            ? (conversation.getConversationWith() as CometChat.Group).getIcon()
+                            : (conversation.getConversationWith() as CometChat.User).getAvatar();
                     return (
-                        <Box key={user.getUid()}>
+                        <Box key={conversation.getConversationId()}>
                             <Conversation
-                                key={user.getUid()}
-                                isTyping={typingUsers[user.getUid()] || false}
-                                avatar={user.getAvatar()}
-                                id={user.getUid()}
-                                name={user.getName()}
-                                onClick={(user) => {
-                                    console.log("hello", user);
-                                }}
-                            />
-                            {index + 1 !== usersList.length && <Divider variant="inset" component="li" />}
-                        </Box>
-                    );
-                })}
-            </List>
-
-            <List
-                sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
-                subheader={
-                    <ListSubheader component="div" id="nested-list-subheader">
-                        Groups
-                    </ListSubheader>
-                }
-            >
-                {groupsList.map((group, index) => {
-                    return (
-                        <Box key={group.getGuid()}>
-                            <Conversation
-                                key={group.getGuid()}
-                                isTyping={typingUsers[group.getGuid()] || false}
-                                avatar={group.getIcon()}
-                                id={group.getGuid()}
-                                name={group.getName()}
+                                key={conversation.getConversationId()}
+                                isTyping={typingUsers[conversation.getConversationId()] || false}
+                                avatar={icon}
+                                id={conversation.getConversationId()}
+                                name={conversation.getConversationWith().getName()}
                                 onClick={() => {
-                                    console.log("hello", group);
+                                    console.log("hello", conversation);
+                                    onSelectConversation(conversation);
                                 }}
+                                hasUnreadMessage={conversation.getUnreadMessageCount() > 0}
+                                lastMessage={lastMessage}
                             />
-                            {index + 1 !== groupsList.length && <Divider variant="inset" component="li" />}
+                            {index + 1 !== conversationsList.length && <Divider variant="inset" component="li" />}
                         </Box>
                     );
                 })}

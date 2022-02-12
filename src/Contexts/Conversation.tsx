@@ -1,81 +1,112 @@
+import { CometChat } from "@cometchat-pro/chat";
 import React from "react";
-import { MyCometChat } from "../CometChat";
 import { useAuthContext } from "./Auth";
 
-interface ConversationContextData {
-    values: {
-        isLoading: boolean;
-        error: unknown;
-        selectedConversationUid: null | string;
-    };
-    // eslint-disable-next-line no-unused-vars
-    onConversationSelect: (uid: string) => void;
+interface ConversationsListContextData {
+    isLoading: boolean;
+    error: unknown;
+    conversationsList: CometChat.Conversation[];
 }
 
-const initialState: ConversationContextData = {
-    values: {
-        isLoading: false,
-        error: null,
-        selectedConversationUid: null,
-    },
-    // eslint-disable-next-line no-unused-vars
-    onConversationSelect: (uid: string) => {},
+const initialState: ConversationsListContextData = {
+    isLoading: false,
+    error: null,
+    conversationsList: [],
 };
 
-const ConversationContext = React.createContext(initialState);
+const ConversationsListContext = React.createContext(initialState);
 
-export const useConversationContext = () => React.useContext(ConversationContext);
+export const useConversationsListContext = () => React.useContext(ConversationsListContext);
 
-export const ConversationContextProvider: React.FunctionComponent = ({ children }) => {
-    const [state, setState] = React.useState<ConversationContextData["values"]>(initialState.values);
+export const ConversationsListContextProvider: React.FunctionComponent = ({ children }) => {
+    const [state, setState] =
+        React.useState<Pick<ConversationsListContextData, "conversationsList" | "error" | "isLoading">>(initialState);
 
     const authState = useAuthContext();
 
+    const onMessageHandleConversationsListUpdate = (msg: CometChat.BaseMessage) => {
+        CometChat.CometChatHelper.getConversationFromMessage(msg).then(
+            (conversation) => {
+                console.log("Conversation Object", conversation);
+
+                setState((prevState) => {
+                    const newConversationsList = [conversation, ...prevState.conversationsList];
+                    // Update on the conversationList else add to conversationList
+
+                    // Dedupe the newConversationsList to have uniqueness
+
+                    const dedupeMap = new Map<string, boolean>();
+                    // Const oldConvIndex = state.conversationsList.findIndex((oldConv) => oldConv.getConversationId() === conversation.getConversationId());
+                    // Convo found, update it
+                    const dedupedConversationsList = newConversationsList.reduce<CometChat.Conversation[]>(
+                        (prevValue, currentValue) => {
+                            const id = currentValue.getConversationId();
+
+                            if (dedupeMap.get(id))
+                                // Duplicate
+                                return prevValue;
+
+                            dedupeMap.set(id, true);
+                            prevValue.push(currentValue);
+                            return prevValue;
+                        },
+                        [],
+                    );
+                    return {
+                        ...prevState,
+                        conversationsList: dedupedConversationsList,
+                    };
+                });
+            },
+            (error) => {
+                console.log("Error while converting message object", error);
+            },
+        );
+    };
+
     React.useEffect(() => {
-        if (authState.values.user) {
-            const limit = 30;
-            const conversationType = "user";
-            const conversationRequest = new MyCometChat.ConversationsRequestBuilder()
-                .setLimit(limit)
-                .setConversationType(conversationType)
-                .withUserAndGroupTags(true)
-                .build();
-
-            conversationRequest
-                .fetchNext()
-                .then((d) => console.log("res", d))
-                .catch((e) => console.log(e));
-        }
-    }, [authState.values.user]);
-
-    const onConversationSelect = async (uid: string) => {
-        setState((prevState) => ({
-            ...prevState,
-            selectedConversationUid: uid,
-            isLoading: true,
-        }));
+        if (!authState.values.user) return;
+        // Fetch the conversations
         const limit = 30;
-        const conversationType = "user";
-        const conversationRequest = new MyCometChat.ConversationsRequestBuilder()
+        const conversationRequest = new CometChat.ConversationsRequestBuilder()
             .setLimit(limit)
-            .setConversationType(conversationType)
             .withUserAndGroupTags(true)
             .build();
 
-        const res = await conversationRequest.fetchNext();
-        console.log(res);
-        // Load all teh messages
-        // Set it on the state
-        // set Loading false
-        setState((prevState) => ({
-            ...prevState,
-            isLoading: false,
-        }));
-    };
+        conversationRequest
+            .fetchNext()
+            .then((response) => {
+                setState((prevState) => ({
+                    ...prevState,
+                    conversationsList: response,
+                }));
+            })
+            .catch(console.log);
 
-    return (
-        <ConversationContext.Provider value={{ values: state, onConversationSelect }}>
-            {children}
-        </ConversationContext.Provider>
-    );
+        // Subscribe to the conversations for new messages!
+        const messageListerId = "message_listener_id";
+        CometChat.addMessageListener(
+            messageListerId,
+            new CometChat.MessageListener({
+                onTextMessageReceived: (textMessage: CometChat.TextMessage) => {
+                    // Get the conversation from message, and attach it the conversation list for last message
+                    console.log("Text message received successfully", textMessage);
+                    onMessageHandleConversationsListUpdate(textMessage);
+                },
+                onMediaMessageReceived: (mediaMessage: CometChat.MediaMessage) => {
+                    console.log("Media message received successfully", mediaMessage);
+                    onMessageHandleConversationsListUpdate(mediaMessage);
+                },
+                onCustomMessageReceived: (customMessage: CometChat.CustomMessage) => {
+                    console.log("Custom message received successfully", customMessage);
+                    onMessageHandleConversationsListUpdate(customMessage);
+                },
+            }),
+        );
+        return () => {
+            CometChat.removeMessageListener(messageListerId);
+        };
+    }, [authState.values.user]);
+
+    return <ConversationsListContext.Provider value={{ ...state }}>{children}</ConversationsListContext.Provider>;
 };
