@@ -10,6 +10,7 @@ interface ActiveConversationContextData {
     messages: CometChat.BaseMessage[];
     onSelectConversation: (convo: CometChat.Conversation) => void;
     sendMessage: (msg: CometChat.TextMessage) => void | Promise<void>;
+    isSendingMessage: boolean;
 }
 
 const initialState: ActiveConversationContextData = {
@@ -19,6 +20,7 @@ const initialState: ActiveConversationContextData = {
     messages: [],
     onSelectConversation: () => {},
     sendMessage: () => {},
+    isSendingMessage: false,
 };
 
 const ActiveConversationContext = React.createContext(initialState);
@@ -27,7 +29,8 @@ export const useActiveConversationContext = () =>
     React.useContext<ActiveConversationContextData>(ActiveConversationContext);
 
 export const ActiveConversationContextProvider: React.FunctionComponent = ({ children }) => {
-    const [state, setState] = React.useState<Omit<ActiveConversationContextData, "onSelectConversation">>(initialState);
+    const [state, setState] =
+        React.useState<Omit<ActiveConversationContextData, "onSelectConversation" | "sendMessage">>(initialState);
 
     const authState = useAuthContext();
 
@@ -85,7 +88,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
     const sendMessage = async (msg: CometChat.TextMessage) => {
         setState((prevState) => ({
             ...prevState,
-            isLoading: true,
+            isSendingMessage: true,
             error: null,
         }));
 
@@ -95,13 +98,13 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                 return {
                     ...prevState,
                     messages: [...prevState.messages, sentMessage],
-                    isLoading: false,
+                    isSendingMessage: false,
                 };
             });
         } catch (error) {
             setState((prevState) => ({
                 ...prevState,
-                isLoading: false,
+                isSendingMessage: false,
                 error,
             }));
         }

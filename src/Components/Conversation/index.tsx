@@ -6,7 +6,7 @@ import { useActiveConversationContext } from "../../Contexts/ActiveConversation"
 import Messages from "./Messages";
 
 const Conversation = () => {
-    const { conversation, isLoading, messages, sendMessage } = useActiveConversationContext();
+    const { conversation, isLoading, messages, sendMessage, isSendingMessage } = useActiveConversationContext();
     const [inputMessage, setInputMessage] = React.useState("");
 
     if (!conversation)
@@ -113,6 +113,7 @@ const Conversation = () => {
                     variant="outlined"
                     sx={{ width: "100%" }}
                     value={inputMessage}
+                    disabled={isSendingMessage}
                     onChange={(e) => {
                         setInputMessage(e.target.value);
                     }}
@@ -124,7 +125,7 @@ const Conversation = () => {
                         p: 2,
                     }}
                 >
-                    <Button variant="contained" onClick={onSendMessage}>
+                    <Button disabled={isSendingMessage} variant="contained" onClick={onSendMessage}>
                         Send Message
                     </Button>
                 </Box>
