@@ -108,33 +108,54 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
     };
 
     React.useEffect(() => {
+        // Subscribe to messages only after login
         if (!authState.values.user) return;
         if (!state.conversation) return;
 
         fetchMessages(state.conversation);
-
         // Subscribe to the conversations for new messages!
         // Mark message as delivered
-        // const messageListerId = "message_listener_id";
-        // CometChat.addMessageListener(
-        //     messageListerId,
-        //     new CometChat.MessageListener({
-        //         onTextMessageReceived: (textMessage: CometChat.TextMessage) => {
-        //             // Get the conversation from message, and attach it the conversation list for last message
-        //             console.log("Text message received successfully", textMessage);
-        //             CometChat.markAsDelivered(message);
-        //             CometChat.markAsRead(message)
-        //         },
-        //         onMediaMessageReceived: (mediaMessage: CometChat.MediaMessage) => {
-        //             console.log("Media message received successfully", mediaMessage);
-        //         },
-        //         onCustomMessageReceived: (customMessage: CometChat.CustomMessage) => {
-        //             console.log("Custom message received successfully", customMessage);
-        //         },
-        //     }),
-        // );
+        const messageListerId = "message_listener_id2";
+        CometChat.addMessageListener(
+            messageListerId,
+            new CometChat.MessageListener({
+                onTextMessageReceived: (textMessage: CometChat.TextMessage) => {
+                    // Get the conversation from message, and attach it the conversation list for last message
+                    console.log("Text message received successfully", textMessage);
+                    CometChat.markAsDelivered(textMessage);
+                    // Check if message is for the active conversation, else ignore
+                    if (textMessage.getConversationId() === state.conversation?.getConversationId())
+                        setState((prevState) => ({
+                            ...prevState,
+                            messages: [...prevState.messages, textMessage],
+                        }));
+                    // CometChat.markAsRead(textMessage)
+                },
+                onMediaMessageReceived: (mediaMessage: CometChat.MediaMessage) => {
+                    console.log("Media message received successfully", mediaMessage);
+                    CometChat.markAsDelivered(mediaMessage);
+                    // CometChat.markAsRead(textMessage)
+                    if (mediaMessage.getConversationId() === state.conversation?.getConversationId())
+                        setState((prevState) => ({
+                            ...prevState,
+                            messages: [...prevState.messages, mediaMessage],
+                        }));
+                },
+                onCustomMessageReceived: (customMessage: CometChat.CustomMessage) => {
+                    console.log("Custom message received successfully", customMessage);
+                    CometChat.markAsDelivered(customMessage);
+                    // CometChat.markAsRead(textMessage)
+                    if (customMessage.getConversationId() === state.conversation?.getConversationId())
+                        setState((prevState) => ({
+                            ...prevState,
+                            messages: [...prevState.messages, customMessage],
+                        }));
+                },
+            }),
+        );
+
         return () => {
-            // CometChat.removeMessageListener(messageListerId);
+            CometChat.removeMessageListener(messageListerId);
         };
     }, [authState.values.user, state.conversation]);
 

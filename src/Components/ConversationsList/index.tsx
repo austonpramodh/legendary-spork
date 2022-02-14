@@ -79,56 +79,13 @@ const Conversation: React.FunctionComponent<ConversationProps> = ({
 };
 
 const ConversationsList = () => {
-    const [typingUsers, setTypingUsers] = React.useState<Record<string, boolean>>({});
-
-    const { conversationsList } = useConversationsListContext();
+    const { conversationsList, typingUsers } = useConversationsListContext();
 
     const { onSelectConversation } = useActiveConversationContext();
 
     const {
         values: { user },
     } = useAuthContext();
-
-    React.useEffect(() => {
-        if (!user)
-            // Not yet logged in
-            return;
-
-        const typingIndicatorListnerId = "typingIndicatorListnerId";
-
-        interface TypingIndicator {
-            sender: CometChat.User;
-            receiverId: string;
-            receiverType: string;
-        }
-
-        CometChat.addMessageListener(
-            typingIndicatorListnerId,
-            new CometChat.MessageListener({
-                onTypingStarted: (typingIndicator: TypingIndicator) => {
-                    console.log("Typing started --- ", typingIndicator);
-                    if (typingIndicator.receiverId.toLowerCase() === user.getUid().toLowerCase())
-                        // Only update states if the typing is for me
-                        setTypingUsers((typingUsers) => ({
-                            ...typingUsers,
-                            [typingIndicator.sender.getUid()]: true,
-                        }));
-                },
-                onTypingEnded: (typingIndicator: TypingIndicator) => {
-                    console.log("Typing ended --- ", typingIndicator);
-                    if (typingIndicator.receiverId.toLowerCase() === user.getUid().toLowerCase())
-                        setTypingUsers((typingUsers) => ({
-                            ...typingUsers,
-                            [typingIndicator.sender.getUid()]: false,
-                        }));
-                },
-            }),
-        );
-
-        return () => {
-            CometChat.removeMessageListener(typingIndicatorListnerId);
-        };
-    }, [user?.getUid()]);
 
     if (!user) return null;
 
@@ -152,14 +109,30 @@ const ConversationsList = () => {
                         conversation.getConversationType() === "group"
                             ? (conversation.getConversationWith() as CometChat.Group).getIcon()
                             : (conversation.getConversationWith() as CometChat.User).getAvatar();
+                    const id =
+                        conversation.getConversationType() === "group"
+                            ? (conversation.getConversationWith() as CometChat.Group).getGuid()
+                            : (conversation.getConversationWith() as CometChat.User).getUid();
+
+                    const typingKeyPrefix =
+                        conversation.getConversationType() === "group"
+                            ? (conversation.getConversationWith() as CometChat.Group).getGuid()
+                            : user.getUid();
+                    console.log(typingUsers);
                     return (
                         <Box key={conversation.getConversationId()}>
                             <Conversation
                                 key={conversation.getConversationId()}
-                                isTyping={typingUsers[conversation.getConversationId()] || false}
+                                isTyping={
+                                    typingUsers[
+                                        conversation.getConversationType() === "group"
+                                            ? typingKeyPrefix
+                                            : `${typingKeyPrefix}-${id}`
+                                    ] || false
+                                }
                                 avatar={icon}
                                 id={conversation.getConversationId()}
-                                name={conversation.getConversationWith().getName()}
+                                name={`${conversation.getConversationWith().getName()}-${id}`}
                                 onClick={() => {
                                     console.log("hello", conversation);
                                     onSelectConversation(conversation);
