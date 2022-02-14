@@ -117,6 +117,23 @@ const Conversation = () => {
                     onChange={(e) => {
                         setInputMessage(e.target.value);
                     }}
+                    onFocus={() => {
+                        // Send typing even
+                        const receiverType =
+                            conversation.getConversationType() === "user"
+                                ? CometChat.RECEIVER_TYPE.USER
+                                : CometChat.RECEIVER_TYPE.GROUP;
+                        const typingNotification = new CometChat.TypingIndicator(receiverId, receiverType);
+                        CometChat.startTyping(typingNotification);
+                    }}
+                    onBlur={() => {
+                        const receiverType =
+                            conversation.getConversationType() === "user"
+                                ? CometChat.RECEIVER_TYPE.USER
+                                : CometChat.RECEIVER_TYPE.GROUP;
+                        const typingNotification = new CometChat.TypingIndicator(receiverId, receiverType);
+                        CometChat.endTyping(typingNotification);
+                    }}
                 />
                 <Box
                     sx={{

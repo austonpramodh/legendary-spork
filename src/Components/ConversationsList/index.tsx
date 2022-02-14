@@ -132,7 +132,7 @@ const ConversationsList = () => {
                                 }
                                 avatar={icon}
                                 id={conversation.getConversationId()}
-                                name={`${conversation.getConversationWith().getName()}-${id}`}
+                                name={`${conversation.getConversationWith().getName()}`}
                                 onClick={() => {
                                     console.log("hello", conversation);
                                     onSelectConversation(conversation);
