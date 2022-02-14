@@ -27,6 +27,7 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
 
                 if (message.getType() === "text") {
                     const textMessage = message as CometChat.TextMessage;
+                    // Const deliveredAt = new Date(textMessage.getDeliveredAt());
                     return (
                         <Box
                             sx={{ mb: isLastMessage ? 0 : 1 }}

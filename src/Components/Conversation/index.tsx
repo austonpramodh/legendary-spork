@@ -6,7 +6,8 @@ import { useActiveConversationContext } from "../../Contexts/ActiveConversation"
 import Messages from "./Messages";
 
 const Conversation = () => {
-    const { conversation, isLoading, messages, sendMessage, isSendingMessage } = useActiveConversationContext();
+    const { conversation, isLoading, messages, sendMessage, isSendingMessage, fetchPrevMessages } =
+        useActiveConversationContext();
     const [inputMessage, setInputMessage] = React.useState("");
 
     if (!conversation)
@@ -102,6 +103,14 @@ const Conversation = () => {
                 })}
             >
                 <Box sx={{ flexGrow: 1, maxHeight: "58vh", overflowY: "scroll", p: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            fetchPrevMessages();
+                        }}
+                    >
+                        Load More - currently loaded - {messages.length}
+                    </Button>
                     <Messages messages={messages} />
                 </Box>
                 <TextField

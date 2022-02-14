@@ -11,6 +11,7 @@ interface ActiveConversationContextData {
     onSelectConversation: (convo: CometChat.Conversation) => void;
     sendMessage: (msg: CometChat.TextMessage) => void | Promise<void>;
     isSendingMessage: boolean;
+    fetchPrevMessages: () => void;
 }
 
 const initialState: ActiveConversationContextData = {
@@ -21,6 +22,7 @@ const initialState: ActiveConversationContextData = {
     onSelectConversation: () => {},
     sendMessage: () => {},
     isSendingMessage: false,
+    fetchPrevMessages: () => {},
 };
 
 const ActiveConversationContext = React.createContext(initialState);
@@ -32,10 +34,13 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
     const [state, setState] =
         React.useState<Omit<ActiveConversationContextData, "onSelectConversation" | "sendMessage">>(initialState);
 
+    const conversationClassRef = React.useRef<CometChat.MessagesRequest | null>(null);
+
     const authState = useAuthContext();
 
     const onSelectConversation = (convo: CometChat.Conversation) => {
         if (state.conversation?.getConversationId() === convo.getConversationId()) return;
+        // Mark all messages as read
         setState((prevState) => ({
             ...prevState,
             isLoading: true,
@@ -44,45 +49,58 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
             messages: [],
         }));
 
+        conversationClassRef.current = null;
+
         // Mark as the messages are read
         // Trigger fetch conversation complete
     };
 
-    const fetchMessages = async (conversation: CometChat.Conversation) => {
-        const limit = 30;
-        let messagesRequest = new CometChat.MessagesRequestBuilder().setLimit(limit);
+    const fetchPrevMessages = async (initialFetch?: boolean) => {
+        const { conversation } = state;
+        if (!conversation) return;
+        if (!conversationClassRef.current) {
+            const limit = 30;
+            let messagesRequest = new CometChat.MessagesRequestBuilder().setLimit(limit);
 
-        if (conversation.getConversationType() === "user")
-            messagesRequest = messagesRequest.setUID((conversation.getConversationWith() as CometChat.User).getUid());
-        // Group message
-        else
-            messagesRequest = messagesRequest.setGUID(
-                (conversation.getConversationWith() as CometChat.Group).getGuid(),
-            );
+            if (conversation.getConversationType() === "user")
+                messagesRequest = messagesRequest.setUID(
+                    (conversation.getConversationWith() as CometChat.User).getUid(),
+                );
+            // Group message
+            else
+                messagesRequest = messagesRequest.setGUID(
+                    (conversation.getConversationWith() as CometChat.Group).getGuid(),
+                );
 
-        messagesRequest
-            .build()
-            .fetchPrevious()
-            .then(
-                (messages) => {
-                    setState((prevState) => ({
-                        ...prevState,
-                        isLoading: false,
-                        messages,
-                    }));
-                    console.log("Message list fetched:", messages);
-                },
-                (error) => {
-                    console.log("Message fetching failed with error:", error);
-                    setState((prevState) => ({
-                        ...prevState,
-                        messages: [],
-                        conversation: null,
-                        isLoading: false,
-                        error,
-                    }));
-                },
-            );
+            conversationClassRef.current = messagesRequest.build();
+        }
+
+        conversationClassRef.current.fetchPrevious().then(
+            (messages) => {
+                // MArk everyting delivered and read when opened for the first time
+                if (initialFetch && messages[messages.length - 1]) {
+                    CometChat.markAsDelivered(messages[messages.length - 1]);
+                    CometChat.markAsRead(messages[messages.length - 1]);
+                }
+
+                setState((prevState) => ({
+                    ...prevState,
+                    isLoading: false,
+                    messages: [...messages, ...prevState.messages],
+                }));
+                console.log("Message list fetched:", messages);
+            },
+            (error) => {
+                console.log("Message fetching failed with error:", error);
+                setState((prevState) => ({
+                    ...prevState,
+                    messages: [],
+                    conversation: null,
+                    isLoading: false,
+                    error,
+                }));
+            },
+        );
     };
 
     const sendMessage = async (msg: CometChat.TextMessage) => {
@@ -112,10 +130,11 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
 
     React.useEffect(() => {
         // Subscribe to messages only after login
-        if (!authState.values.user) return;
-        if (!state.conversation) return;
+        if (!authState.values.user || !state.conversation) {
+            return;
+        }
 
-        fetchMessages(state.conversation);
+        fetchPrevMessages();
         // Subscribe to the conversations for new messages!
         // Mark message as delivered
         const messageListerId = "message_listener_id2";
@@ -132,12 +151,12 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                             ...prevState,
                             messages: [...prevState.messages, textMessage],
                         }));
-                    // CometChat.markAsRead(textMessage)
+                    CometChat.markAsRead(textMessage);
                 },
                 onMediaMessageReceived: (mediaMessage: CometChat.MediaMessage) => {
                     console.log("Media message received successfully", mediaMessage);
                     CometChat.markAsDelivered(mediaMessage);
-                    // CometChat.markAsRead(textMessage)
+                    CometChat.markAsRead(mediaMessage);
                     if (mediaMessage.getConversationId() === state.conversation?.getConversationId())
                         setState((prevState) => ({
                             ...prevState,
@@ -147,7 +166,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                 onCustomMessageReceived: (customMessage: CometChat.CustomMessage) => {
                     console.log("Custom message received successfully", customMessage);
                     CometChat.markAsDelivered(customMessage);
-                    // CometChat.markAsRead(textMessage)
+                    CometChat.markAsRead(customMessage);
                     if (customMessage.getConversationId() === state.conversation?.getConversationId())
                         setState((prevState) => ({
                             ...prevState,
@@ -163,7 +182,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
     }, [authState.values.user, state.conversation]);
 
     return (
-        <ActiveConversationContext.Provider value={{ ...state, onSelectConversation, sendMessage }}>
+        <ActiveConversationContext.Provider value={{ ...state, onSelectConversation, sendMessage, fetchPrevMessages }}>
             {children}
         </ActiveConversationContext.Provider>
     );
