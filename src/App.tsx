@@ -8,6 +8,8 @@ import { ConversationsListContextProvider } from "./Contexts/Conversation";
 import AppBar from "./Components/AppBar";
 import Conversation from "./Components/Conversation";
 import { ActiveConversationContextProvider } from "./Contexts/ActiveConversation";
+import { CallContextProvider } from "./Contexts/CallContext";
+import CallScreen from "./Components/CallScreen";
 
 const App: React.FunctionComponent = () => {
     React.useEffect(() => {
@@ -20,21 +22,25 @@ const App: React.FunctionComponent = () => {
             <AuthContextProvider>
                 <ConversationsListContextProvider>
                     <ActiveConversationContextProvider>
-                        <AppBar />
-                        <Container component="main" maxWidth="lg">
-                            <UserLoginModal />
-                            <Paper
-                                variant="outlined"
-                                sx={{
-                                    my: { xs: 3, md: 6 },
-                                    minHeight: "80vh",
-                                    display: "flex",
-                                }}
-                            >
-                                <ConversationsList />
-                                <Conversation />
-                            </Paper>
-                        </Container>
+                        <CallContextProvider>
+                            <CallScreen>
+                                <AppBar />
+                                <Container component="main" maxWidth="lg">
+                                    <UserLoginModal />
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            my: { xs: 3, md: 6 },
+                                            minHeight: "80vh",
+                                            display: "flex",
+                                        }}
+                                    >
+                                        <ConversationsList />
+                                        <Conversation />
+                                    </Paper>
+                                </Container>
+                            </CallScreen>
+                        </CallContextProvider>
                     </ActiveConversationContextProvider>
                 </ConversationsListContextProvider>
             </AuthContextProvider>

@@ -1,14 +1,27 @@
 import React from "react";
 import { CometChat } from "@cometchat-pro/chat";
-import { AppBar, Avatar, Box, Button, Container, TextField, Toolbar, Typography, LinearProgress } from "@mui/material";
-
+import {
+    AppBar,
+    Avatar,
+    Box,
+    Button,
+    Container,
+    TextField,
+    Toolbar,
+    Typography,
+    LinearProgress,
+    IconButton,
+} from "@mui/material";
+import { Call } from "@mui/icons-material";
 import { useActiveConversationContext } from "../../Contexts/ActiveConversation";
 import Messages from "./Messages";
+import { useCallContext } from "../../Contexts/CallContext";
 
 const Conversation = () => {
     const { conversation, isLoading, messages, sendMessage, isSendingMessage, fetchPrevMessages } =
         useActiveConversationContext();
     const [inputMessage, setInputMessage] = React.useState("");
+    const { onStartCall } = useCallContext();
 
     if (!conversation)
         return (
@@ -90,6 +103,12 @@ const Conversation = () => {
                         >
                             {conversationWith.getName()}
                         </Typography>
+                        <Box sx={{ flexGrow: 1, display: "flex" }} />
+                        {conversationType === "user" && (
+                            <IconButton onClick={() => onStartCall(conversationWith as CometChat.User)}>
+                                <Call />
+                            </IconButton>
+                        )}
                     </Toolbar>
                 </Container>
             </AppBar>

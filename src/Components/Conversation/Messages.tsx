@@ -10,7 +10,6 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
     const messageBoxRef = React.useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        console.log(messageBoxRef);
         messageBoxRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
@@ -45,8 +44,17 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
                 }
 
                 return (
-                    <Box ref={isLastMessage ? messageBoxRef : undefined}>
-                        <Typography key={`message-${id}`}>Unknown Type</Typography>;
+                    <Box
+                        sx={{ mb: isLastMessage ? 0 : 1 }}
+                        key={`message-${id}`}
+                        ref={isLastMessage ? messageBoxRef : undefined}
+                    >
+                        <Typography color="red">
+                            <Typography variant="subtitle2" component={"span"}>
+                                {from.getName()}:{" "}
+                            </Typography>
+                            Message type not integrated! - {message.getType()}
+                        </Typography>
                     </Box>
                 );
             })}
