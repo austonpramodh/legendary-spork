@@ -43,7 +43,7 @@ export const AuthContextProvider: React.FunctionComponent = ({ children }) => {
         });
 
         try {
-            const response = await MyCometChat.login(uid, authKey);
+            const response = await MyCometChat.login(uid.toLowerCase(), authKey);
             setState({
                 user: response,
                 isLoading: false,
