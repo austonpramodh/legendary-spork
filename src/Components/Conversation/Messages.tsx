@@ -15,6 +15,7 @@ const DeliveryReceiptIcons: React.FunctionComponent<DeliveryReceiptIconsProps> =
         <Box
             sx={{
                 mt: 2,
+                ml: 1,
             }}
         >
             {!isDelivered && <Done sx={{ fontSize: 12, color: "grey" }} />}
