@@ -18,10 +18,11 @@ const CallScreen: React.FunctionComponent = ({ children }) => {
     const { isCallInProgress, onEndCall, callReceiver, incomingCall, onAcceptIncomingCall, isCallConnected } =
         useCallContext();
 
+    console.log("isCallConnected --", isCallConnected);
     return (
         <div>
             <Modal
-                open={isCallInProgress}
+                open={isCallInProgress && !isCallConnected}
                 onClose={() => onEndCall()}
                 aria-labelledby="modal-modal-title"
                 aria-describedby="modal-modal-description"
@@ -31,9 +32,9 @@ const CallScreen: React.FunctionComponent = ({ children }) => {
                         Call in Progress
                     </Typography>
                     <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                        {incomingCall && !isCallConnected && "Receiving a call from"}{" "}
+                        {incomingCall && !isCallConnected && "Receiving a call from"}
                         {!incomingCall && !isCallConnected && "Calling"}
-                        {isCallConnected && `in Call with `}
+                        {isCallConnected && `in Call with`}{" "}
                         <Typography component="span" sx={{ fontWeight: 500 }}>
                             {callReceiver?.getName()}
                         </Typography>

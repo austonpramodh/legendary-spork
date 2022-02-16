@@ -122,6 +122,7 @@ export const CallContextProvider: React.FunctionComponent = ({ children }) => {
             .enableDefaultLayout(true)
             .setIsAudioOnlyCall(callType === "audio")
             .build();
+
         CometChat.startCall(
             callSettings,
             document.getElementById("callScreen")!,
@@ -137,9 +138,11 @@ export const CallContextProvider: React.FunctionComponent = ({ children }) => {
                 },
                 onCallEnded: (call: CometChat.Call) => {
                     console.log("Call ended:", call);
+                    onEndCall();
                 },
                 onError: (error: any) => {
                     console.log("Error :", error);
+                    onEndCall();
                 },
                 onMediaDeviceListUpdated: (deviceList: CometChat.MediaDevice) => {
                     console.log("Device List:", deviceList);
@@ -158,6 +161,16 @@ export const CallContextProvider: React.FunctionComponent = ({ children }) => {
                 },
             }),
         );
+
+        setState((prevState) => ({
+            ...prevState,
+            isCallConnected: true,
+        }));
+
+        setTimeout(() => {
+            const iframeDoc = document.getElementsByName("frame")[0];
+            iframeDoc.classList.add("custom-call-screen");
+        }, 200);
     };
 
     const onEndCall = () => {
@@ -167,6 +180,8 @@ export const CallContextProvider: React.FunctionComponent = ({ children }) => {
         CometChat.rejectCall(sessionId, status).then(
             (call) => {
                 console.log("Call rejected successfully", call);
+                const iframeDoc = document.getElementsByName("frame")[0];
+                iframeDoc.classList.remove("custom-call-screen");
             },
             (error) => {
                 console.log("Call rejection failed with error:", error);
@@ -176,6 +191,7 @@ export const CallContextProvider: React.FunctionComponent = ({ children }) => {
         setState((prevState) => ({
             ...prevState,
             isCallInProgress: false,
+            isCallConnected: false,
             callReceiver: null,
             incomingCall: null,
         }));
