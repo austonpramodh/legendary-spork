@@ -174,7 +174,7 @@ const ConversationsList = () => {
                 sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
                 subheader={
                     <ListSubheader component="div" id="nested-list-subheader">
-                        Groups
+                        Users
                     </ListSubheader>
                 }
             >
@@ -205,7 +205,7 @@ const ConversationsList = () => {
                 sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
                 subheader={
                     <ListSubheader component="div" id="nested-list-subheader">
-                        Users
+                        Groups
                     </ListSubheader>
                 }
             >

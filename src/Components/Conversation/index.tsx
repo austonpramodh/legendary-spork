@@ -12,7 +12,7 @@ import {
     LinearProgress,
     IconButton,
 } from "@mui/material";
-import { Call, DeleteForever } from "@mui/icons-material";
+import { Call, DeleteForever, VideoCall } from "@mui/icons-material";
 import { useActiveConversationContext } from "../../Contexts/ActiveConversation";
 import Messages from "./Messages";
 import { useCallContext } from "../../Contexts/CallContext";
@@ -22,7 +22,7 @@ const Conversation = () => {
         useActiveConversationContext();
     const [inputMessage, setInputMessage] = React.useState("");
     const [inputFile, setInputFile] = React.useState<any>(null);
-    const { onStartCall } = useCallContext();
+    const { onStartCall, onInitiateGroupCall } = useCallContext();
 
     if (!conversation)
         return (
@@ -117,6 +117,11 @@ const Conversation = () => {
                         {conversationType === "user" && (
                             <IconButton onClick={() => onStartCall(conversationWith as CometChat.User)}>
                                 <Call />
+                            </IconButton>
+                        )}
+                        {conversationType === "group" && (
+                            <IconButton onClick={() => onInitiateGroupCall(conversationWith as CometChat.Group)}>
+                                <VideoCall />
                             </IconButton>
                         )}
                     </Toolbar>

@@ -1,6 +1,7 @@
 import { CometChat } from "@cometchat-pro/chat";
-import { Box, Link, Typography } from "@mui/material";
+import { Box, Button, Link, Typography } from "@mui/material";
 import React from "react";
+import { useCallContext } from "../../Contexts/CallContext";
 
 interface Props {
     messages: CometChat.BaseMessage[];
@@ -8,6 +9,7 @@ interface Props {
 
 const Messages: React.FunctionComponent<Props> = ({ messages }) => {
     const messageBoxRef = React.useRef<HTMLDivElement>(null);
+    const { onAcceptGroupCall } = useCallContext();
 
     const scrollToBottom = () => {
         messageBoxRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,16 +36,69 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
         }
 
         if (messageType === "file") {
-            console.log(message);
             const mediaMessage = message as CometChat.MediaMessage;
+            return (
+                <Typography
+                    component="div"
+                    sx={{
+                        display: "flex",
+                        // JustifyContent: "center",
+                        alignItems: "flex-start",
+                    }}
+                >
+                    <Typography variant="subtitle2" component={"span"}>
+                        {from.getName()}:{" "}
+                    </Typography>
+
+                    <Link href={mediaMessage.getURL()} variant="body2" target={"_blank"}>
+                        {mediaMessage.getAttachment().getMimeType().startsWith("image") ? (
+                            <Box
+                                sx={{
+                                    ml: 2,
+                                }}
+                            >
+                                <img
+                                    src={mediaMessage.getURL()}
+                                    width="100px"
+                                    height="100px"
+                                    style={{
+                                        maxWidth: 100,
+                                        height: "auto",
+                                    }}
+                                />
+                            </Box>
+                        ) : (
+                            mediaMessage.getAttachment().getName()
+                        )}
+                    </Link>
+                </Typography>
+            );
+        }
+
+        if (messageType === "meeting") {
+            console.log("meeting---", message);
+            const meetingMessage = message as CometChat.CustomMessage;
+            const customData = meetingMessage.getData().customData as {
+                callType: "video";
+                sessionID: string;
+                sessionId: string;
+            };
             return (
                 <Typography>
                     <Typography variant="subtitle2" component={"span"}>
                         {from.getName()}:{" "}
                     </Typography>
-                    <Link href={mediaMessage.getURL()} variant="body2" target={"_blank"}>
-                        {mediaMessage.getAttachment().getName()}
-                    </Link>
+                    has initiated a meeting -{" "}
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            // Join the meeting
+                            console.log("Join the meeting session --> ", customData.sessionId);
+                            onAcceptGroupCall(customData.sessionId);
+                        }}
+                    >
+                        Join Meeting
+                    </Button>
                 </Typography>
             );
         }
