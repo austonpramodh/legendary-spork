@@ -12,7 +12,7 @@ import {
     LinearProgress,
     IconButton,
 } from "@mui/material";
-import { Call } from "@mui/icons-material";
+import { Call, DeleteForever } from "@mui/icons-material";
 import { useActiveConversationContext } from "../../Contexts/ActiveConversation";
 import Messages from "./Messages";
 import { useCallContext } from "../../Contexts/CallContext";
@@ -21,6 +21,7 @@ const Conversation = () => {
     const { conversation, isLoading, messages, sendMessage, isSendingMessage, fetchPrevMessages } =
         useActiveConversationContext();
     const [inputMessage, setInputMessage] = React.useState("");
+    const [inputFile, setInputFile] = React.useState<any>(null);
     const { onStartCall } = useCallContext();
 
     if (!conversation)
@@ -77,6 +78,15 @@ const Conversation = () => {
             : (conversationWith as CometChat.User).getUid();
 
     const onSendMessage = async () => {
+        //
+        if (inputFile) {
+            const messageType = CometChat.MESSAGE_TYPE.FILE;
+            // File type
+            await sendMessage(new CometChat.MediaMessage(receiverId, inputFile, messageType, conversationType));
+            setInputFile(null);
+            return;
+        }
+
         await sendMessage(new CometChat.TextMessage(receiverId, inputMessage, conversationType));
         setInputMessage("");
     };
@@ -141,7 +151,7 @@ const Conversation = () => {
                     variant="outlined"
                     sx={{ width: "100%" }}
                     value={inputMessage}
-                    disabled={isSendingMessage}
+                    disabled={isSendingMessage || Boolean(inputFile)}
                     onChange={(e) => {
                         setInputMessage(e.target.value);
                     }}
@@ -166,12 +176,43 @@ const Conversation = () => {
                 <Box
                     sx={{
                         display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        mt: 1,
+                    }}
+                >
+                    {inputFile ? (
+                        <Typography>{inputFile.name}</Typography>
+                    ) : (
+                        <TextField
+                            disabled={inputMessage.length > 0}
+                            name="upload-photo"
+                            type="file"
+                            onChange={(e) => {
+                                // @ts-ignore
+                                const files = Array.from(e.target.files);
+                                setInputFile(files[0]);
+                            }}
+                        />
+                    )}
+                    <IconButton
+                        onClick={() => {
+                            setInputFile(null);
+                        }}
+                    >
+                        <DeleteForever />
+                    </IconButton>
+                </Box>
+
+                <Box
+                    sx={{
+                        display: "flex",
                         justifyContent: "flex-end",
                         p: 2,
                     }}
                 >
                     <Button disabled={isSendingMessage} variant="contained" onClick={onSendMessage}>
-                        Send Message
+                        Send Message/File
                     </Button>
                 </Box>
             </Box>

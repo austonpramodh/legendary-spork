@@ -9,7 +9,7 @@ interface ActiveConversationContextData {
     conversation: CometChat.Conversation | null;
     messages: CometChat.BaseMessage[];
     onSelectConversation: (convo: CometChat.Conversation) => void;
-    sendMessage: (msg: CometChat.TextMessage) => void | Promise<void>;
+    sendMessage: (msg: CometChat.BaseMessage) => void | Promise<void>;
     isSendingMessage: boolean;
     fetchPrevMessages: () => void;
 }
@@ -103,7 +103,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
         );
     };
 
-    const sendMessage = async (msg: CometChat.TextMessage) => {
+    const sendMessage = async (msg: CometChat.BaseMessage) => {
         setState((prevState) => ({
             ...prevState,
             isSendingMessage: true,

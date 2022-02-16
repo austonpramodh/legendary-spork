@@ -27,7 +27,7 @@ interface ConversationProps {
     avatar: string;
     id: string;
     hasUnreadMessage: boolean;
-    lastMessage: string;
+    lastMessage: string | React.ReactNode;
 }
 
 const Conversation: React.FunctionComponent<ConversationProps> = ({
@@ -78,6 +78,21 @@ const Conversation: React.FunctionComponent<ConversationProps> = ({
     );
 };
 
+const getMessageText = (msg: CometChat.BaseMessage) => {
+    const messageType = msg.getType();
+    if (messageType === "text") {
+        return (msg as CometChat.TextMessage).getData().text as string;
+    }
+
+    if (messageType === "file") {
+        const typedMessage = msg as CometChat.MediaMessage;
+
+        return `File - ${typedMessage.getAttachment().getName()}`;
+    }
+
+    return "Message Type not integrated!";
+};
+
 const ConversationsList = () => {
     const { conversationsList, typingUsers } = useConversationsListContext();
 
@@ -100,10 +115,9 @@ const ConversationsList = () => {
                 }
             >
                 {conversationsList.map((conversation, index) => {
-                    const lastMessage =
-                        conversation.getLastMessage().type === "text"
-                            ? ((conversation.getLastMessage() as CometChat.TextMessage).getData().text as string)
-                            : "Message Type not integrated!";
+                    const lastMessage = conversation.getLastMessage();
+                    const lastMessageText = getMessageText(lastMessage);
+
                     console.log(lastMessage);
                     const icon =
                         conversation.getConversationType() === "group"
@@ -138,7 +152,7 @@ const ConversationsList = () => {
                                     onSelectConversation(conversation);
                                 }}
                                 hasUnreadMessage={conversation.getUnreadMessageCount() > 0}
-                                lastMessage={lastMessage}
+                                lastMessage={lastMessageText}
                             />
                             {index + 1 !== conversationsList.length && <Divider variant="inset" component="li" />}
                         </Box>

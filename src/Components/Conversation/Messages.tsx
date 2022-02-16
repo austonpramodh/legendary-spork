@@ -1,5 +1,5 @@
 import { CometChat } from "@cometchat-pro/chat";
-import { Box, Typography } from "@mui/material";
+import { Box, Link, Typography } from "@mui/material";
 import React from "react";
 
 interface Props {
@@ -17,31 +17,52 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
         setTimeout(scrollToBottom, 300);
     }, [messages.length]);
 
+    const renderMessage = (message: CometChat.BaseMessage) => {
+        const from = message.getSender();
+        const messageType = message.getType();
+        if (messageType === "text") {
+            const textMessage = message as CometChat.TextMessage;
+            // Const deliveredAt = new Date(textMessage.getDeliveredAt());
+            return (
+                <Typography>
+                    <Typography variant="subtitle2" component={"span"}>
+                        {from.getName()}:{" "}
+                    </Typography>
+                    {textMessage.getText()}
+                </Typography>
+            );
+        }
+
+        if (messageType === "file") {
+            console.log(message);
+            const mediaMessage = message as CometChat.MediaMessage;
+            return (
+                <Typography>
+                    <Typography variant="subtitle2" component={"span"}>
+                        {from.getName()}:{" "}
+                    </Typography>
+                    <Link href={mediaMessage.getURL()} variant="body2" target={"_blank"}>
+                        {mediaMessage.getAttachment().getName()}
+                    </Link>
+                </Typography>
+            );
+        }
+
+        return (
+            <Typography color="red">
+                <Typography variant="subtitle2" component={"span"}>
+                    {from.getName()}:{" "}
+                </Typography>
+                Message type not integrated! - {message.getType()}
+            </Typography>
+        );
+    };
+
     return (
         <>
             {messages.map((message, index) => {
-                const id = message.getId();
                 const isLastMessage = messages.length - 1 === index ? messageBoxRef : undefined;
-                const from = message.getSender();
-
-                if (message.getType() === "text") {
-                    const textMessage = message as CometChat.TextMessage;
-                    // Const deliveredAt = new Date(textMessage.getDeliveredAt());
-                    return (
-                        <Box
-                            sx={{ mb: isLastMessage ? 0 : 1 }}
-                            key={`message-${id}`}
-                            ref={isLastMessage ? messageBoxRef : undefined}
-                        >
-                            <Typography>
-                                <Typography variant="subtitle2" component={"span"}>
-                                    {from.getName()}:{" "}
-                                </Typography>
-                                {textMessage.getText()}
-                            </Typography>
-                        </Box>
-                    );
-                }
+                const id = message.getId();
 
                 return (
                     <Box
@@ -49,12 +70,7 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
                         key={`message-${id}`}
                         ref={isLastMessage ? messageBoxRef : undefined}
                     >
-                        <Typography color="red">
-                            <Typography variant="subtitle2" component={"span"}>
-                                {from.getName()}:{" "}
-                            </Typography>
-                            Message type not integrated! - {message.getType()}
-                        </Typography>
+                        {renderMessage(message)}
                     </Box>
                 );
             })}
