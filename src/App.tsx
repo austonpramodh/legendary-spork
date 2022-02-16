@@ -10,6 +10,7 @@ import Conversation from "./Components/Conversation";
 import { ActiveConversationContextProvider } from "./Contexts/ActiveConversation";
 import { CallContextProvider } from "./Contexts/CallContext";
 import CallScreen from "./Components/CallScreen";
+import { UsersGroupsListContextProvider } from "./Contexts/UsersGroups";
 
 const App: React.FunctionComponent = () => {
     React.useEffect(() => {
@@ -20,29 +21,31 @@ const App: React.FunctionComponent = () => {
         <React.Fragment>
             <CssBaseline />
             <AuthContextProvider>
-                <ConversationsListContextProvider>
-                    <ActiveConversationContextProvider>
-                        <CallContextProvider>
-                            <CallScreen>
-                                <AppBar />
-                                <Container component="main" maxWidth="lg">
-                                    <UserLoginModal />
-                                    <Paper
-                                        variant="outlined"
-                                        sx={{
-                                            my: { xs: 3, md: 6 },
-                                            minHeight: "80vh",
-                                            display: "flex",
-                                        }}
-                                    >
-                                        <ConversationsList />
-                                        <Conversation />
-                                    </Paper>
-                                </Container>
-                            </CallScreen>
-                        </CallContextProvider>
-                    </ActiveConversationContextProvider>
-                </ConversationsListContextProvider>
+                <UsersGroupsListContextProvider>
+                    <ConversationsListContextProvider>
+                        <ActiveConversationContextProvider>
+                            <CallContextProvider>
+                                <CallScreen>
+                                    <AppBar />
+                                    <Container component="main" maxWidth="lg">
+                                        <UserLoginModal />
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                my: { xs: 3, md: 6 },
+                                                minHeight: "80vh",
+                                                display: "flex",
+                                            }}
+                                        >
+                                            <ConversationsList />
+                                            <Conversation />
+                                        </Paper>
+                                    </Container>
+                                </CallScreen>
+                            </CallContextProvider>
+                        </ActiveConversationContextProvider>
+                    </ConversationsListContextProvider>
+                </UsersGroupsListContextProvider>
             </AuthContextProvider>
         </React.Fragment>
     );

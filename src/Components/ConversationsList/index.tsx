@@ -17,6 +17,7 @@ import { MyCometChat } from "../../CometChat";
 import { useActiveConversationContext } from "../../Contexts/ActiveConversation";
 import { useAuthContext } from "../../Contexts/Auth";
 import { useConversationsListContext } from "../../Contexts/Conversation";
+import { useUsersGroupsListContext } from "../../Contexts/UsersGroups";
 
 interface ConversationProps {
     // User: CometChat.User;
@@ -98,6 +99,8 @@ const ConversationsList = () => {
 
     const { onSelectConversation } = useActiveConversationContext();
 
+    const { groups, users } = useUsersGroupsListContext();
+
     const {
         values: { user },
     } = useAuthContext();
@@ -105,7 +108,14 @@ const ConversationsList = () => {
     if (!user) return null;
 
     return (
-        <Box display="flex" width="30%" flexDirection="column">
+        <Box
+            display="flex"
+            width="30%"
+            flexDirection="column"
+            // Sx={{
+            //     backgroundColor: "yellow",
+            // }}
+        >
             <List
                 sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
                 subheader={
@@ -153,6 +163,69 @@ const ConversationsList = () => {
                                 }}
                                 hasUnreadMessage={conversation.getUnreadMessageCount() > 0}
                                 lastMessage={lastMessageText}
+                            />
+                            {index + 1 !== conversationsList.length && <Divider variant="inset" component="li" />}
+                        </Box>
+                    );
+                })}
+            </List>
+
+            <List
+                sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
+                subheader={
+                    <ListSubheader component="div" id="nested-list-subheader">
+                        Groups
+                    </ListSubheader>
+                }
+            >
+                {users.map((user, index) => {
+                    const icon = user.getAvatar();
+                    const id = user.getUid();
+
+                    return (
+                        <Box key={id}>
+                            <Conversation
+                                isTyping={false}
+                                avatar={icon}
+                                id={id}
+                                name={`${user.getName()}`}
+                                onClick={() => {
+                                    console.log("hello", user);
+                                    // OnSelectConversation(conversation);
+                                }}
+                                hasUnreadMessage={false}
+                                lastMessage={user.getStatusMessage()}
+                            />
+                            {index + 1 !== conversationsList.length && <Divider variant="inset" component="li" />}
+                        </Box>
+                    );
+                })}
+            </List>
+            <List
+                sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
+                subheader={
+                    <ListSubheader component="div" id="nested-list-subheader">
+                        Users
+                    </ListSubheader>
+                }
+            >
+                {groups.map((group, index) => {
+                    const icon = group.getIcon();
+                    const id = group.getGuid();
+
+                    return (
+                        <Box key={id}>
+                            <Conversation
+                                isTyping={false}
+                                avatar={icon}
+                                id={id}
+                                name={`${group.getName()}`}
+                                onClick={() => {
+                                    console.log("hello", user);
+                                    // OnSelectConversation(conversation);
+                                }}
+                                hasUnreadMessage={false}
+                                lastMessage={""}
                             />
                             {index + 1 !== conversationsList.length && <Divider variant="inset" component="li" />}
                         </Box>
