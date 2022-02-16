@@ -2,6 +2,7 @@
 import { CometChat } from "@cometchat-pro/chat";
 import React from "react";
 import { useAuthContext } from "./Auth";
+import { useConversationsListContext } from "./Conversation";
 
 interface ActiveConversationContextData {
     isLoading: boolean;
@@ -37,6 +38,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
     const conversationClassRef = React.useRef<CometChat.MessagesRequest | null>(null);
 
     const authState = useAuthContext();
+    const { onMessageHandleConversationsListUpdate } = useConversationsListContext();
 
     const onSelectConversation = (convo: CometChat.Conversation) => {
         if (state.conversation?.getConversationId() === convo.getConversationId()) return;
@@ -78,17 +80,18 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
         conversationClassRef.current.fetchPrevious().then(
             (messages) => {
                 // MArk everyting delivered and read when opened for the first time
-                if (initialFetch && messages[messages.length - 1]) {
-                    CometChat.markAsDelivered(messages[messages.length - 1]);
-                    CometChat.markAsRead(messages[messages.length - 1]);
+                if (initialFetch && messages.length > 0) {
+                    const lastMessage = messages[messages.length - 1];
+                    CometChat.markAsDelivered(lastMessage);
+                    CometChat.markAsRead(lastMessage);
                 }
 
+                console.log(messages);
                 setState((prevState) => ({
                     ...prevState,
                     isLoading: false,
                     messages: [...messages, ...prevState.messages],
                 }));
-                console.log("Message list fetched:", messages);
             },
             (error) => {
                 console.log("Message fetching failed with error:", error);
@@ -119,6 +122,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                     isSendingMessage: false,
                 };
             });
+            onMessageHandleConversationsListUpdate(sentMessage);
         } catch (error) {
             setState((prevState) => ({
                 ...prevState,
@@ -134,7 +138,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
             return;
         }
 
-        fetchPrevMessages();
+        fetchPrevMessages(true);
         // Subscribe to the conversations for new messages!
         // Mark message as delivered
         const messageListerId = "message_listener_id2";
@@ -146,32 +150,63 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                     console.log("Text message received successfully", textMessage);
                     CometChat.markAsDelivered(textMessage);
                     // Check if message is for the active conversation, else ignore
-                    if (textMessage.getConversationId() === state.conversation?.getConversationId())
+                    if (textMessage.getConversationId() === state.conversation?.getConversationId()) {
                         setState((prevState) => ({
                             ...prevState,
                             messages: [...prevState.messages, textMessage],
                         }));
-                    CometChat.markAsRead(textMessage);
+                        CometChat.markAsRead(textMessage);
+                    }
                 },
                 onMediaMessageReceived: (mediaMessage: CometChat.MediaMessage) => {
                     console.log("Media message received successfully", mediaMessage);
                     CometChat.markAsDelivered(mediaMessage);
-                    CometChat.markAsRead(mediaMessage);
-                    if (mediaMessage.getConversationId() === state.conversation?.getConversationId())
+                    if (mediaMessage.getConversationId() === state.conversation?.getConversationId()) {
                         setState((prevState) => ({
                             ...prevState,
                             messages: [...prevState.messages, mediaMessage],
                         }));
+                        CometChat.markAsRead(mediaMessage);
+                    }
                 },
                 onCustomMessageReceived: (customMessage: CometChat.CustomMessage) => {
                     console.log("Custom message received successfully", customMessage);
                     CometChat.markAsDelivered(customMessage);
-                    CometChat.markAsRead(customMessage);
-                    if (customMessage.getConversationId() === state.conversation?.getConversationId())
+                    if (customMessage.getConversationId() === state.conversation?.getConversationId()) {
                         setState((prevState) => ({
                             ...prevState,
                             messages: [...prevState.messages, customMessage],
                         }));
+                        CometChat.markAsRead(customMessage);
+                    }
+                },
+                onMessagesDelivered: (messageReceipt: CometChat.MessageReceipt) => {
+                    console.log("MessageDeliverd", { messageReceipt });
+                    setState((prevState) => ({
+                        ...prevState,
+                        messages: prevState.messages.map((m) => {
+                            if (`${m.getId()}` === messageReceipt.getMessageId()) {
+                                m.setDeliveredAt(messageReceipt.getDeliveredAt());
+                            }
+
+                            return m;
+                        }),
+                    }));
+                },
+                onMessagesRead: (messageReceipt: CometChat.MessageReceipt) => {
+                    console.log("MessageRead", { messageReceipt });
+                    setState((prevState) => ({
+                        ...prevState,
+                        messages: prevState.messages.map((m) => {
+                            if (`${m.getId()}` === messageReceipt.getMessageId()) {
+                                console.log("Found message!!");
+                                // M.setDeliveredAt(messageReceipt.getDeliveredAt());
+                                m.setReadAt(messageReceipt.getReadAt());
+                            }
+
+                            return m;
+                        }),
+                    }));
                 },
             }),
         );

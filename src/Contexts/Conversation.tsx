@@ -7,6 +7,8 @@ interface ConversationsListContextData {
     error: unknown;
     conversationsList: CometChat.Conversation[];
     typingUsers: Record<string, boolean>;
+    // eslint-disable-next-line no-unused-vars
+    onMessageHandleConversationsListUpdate: (msg: CometChat.BaseMessage) => void;
 }
 
 const initialState: ConversationsListContextData = {
@@ -14,6 +16,7 @@ const initialState: ConversationsListContextData = {
     error: null,
     conversationsList: [],
     typingUsers: {},
+    onMessageHandleConversationsListUpdate: () => {},
 };
 
 const ConversationsListContext = React.createContext(initialState);
@@ -163,5 +166,9 @@ export const ConversationsListContextProvider: React.FunctionComponent = ({ chil
         };
     }, [user]);
 
-    return <ConversationsListContext.Provider value={{ ...state }}>{children}</ConversationsListContext.Provider>;
+    return (
+        <ConversationsListContext.Provider value={{ ...state, onMessageHandleConversationsListUpdate }}>
+            {children}
+        </ConversationsListContext.Provider>
+    );
 };

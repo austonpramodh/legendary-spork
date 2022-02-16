@@ -128,7 +128,6 @@ const ConversationsList = () => {
                     const lastMessage = conversation.getLastMessage();
                     const lastMessageText = getMessageText(lastMessage);
 
-                    console.log(lastMessage);
                     const icon =
                         conversation.getConversationType() === "group"
                             ? (conversation.getConversationWith() as CometChat.Group).getIcon()
