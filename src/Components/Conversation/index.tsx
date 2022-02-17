@@ -161,14 +161,30 @@ const Conversation = () => {
                 })}
             >
                 <Box sx={{ flexGrow: 1, maxHeight: "58vh", overflowY: "scroll", p: 2 }}>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            fetchPrevMessages();
-                        }}
-                    >
-                        Load More - currently loaded - {messages.length}
-                    </Button>
+                    {messages.length === 0 ? (
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                mt: 2,
+                                textAlign: "center",
+                            }}
+                        >
+                            This is the starting of your conversation with {conversationWith.getName()}
+                        </Typography>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            onClick={() => {
+                                fetchPrevMessages();
+                            }}
+                            sx={{
+                                mb: 2,
+                            }}
+                        >
+                            Load More - currently loaded - {messages.length}
+                        </Button>
+                    )}
+
                     <Messages messages={messages} />
                 </Box>
                 <TextField
