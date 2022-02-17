@@ -18,7 +18,6 @@ const CallScreen: React.FunctionComponent = ({ children }) => {
     const { isCallInProgress, onEndCall, callReceiver, incomingCall, onAcceptIncomingCall, isCallConnected } =
         useCallContext();
 
-    console.log("isCallConnected --", isCallConnected);
     return (
         <div>
             <Modal

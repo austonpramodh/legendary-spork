@@ -179,7 +179,6 @@ const ConversationsList = () => {
                                 id={conversation.getConversationId()}
                                 name={`${conversation.getConversationWith().getName()}`}
                                 onClick={() => {
-                                    console.log("hello", conversation);
                                     onSelectConversation(conversation);
                                 }}
                                 onDelete={() => {
@@ -259,8 +258,6 @@ const ConversationsList = () => {
                                 id={id}
                                 name={`${group.getName()}`}
                                 onClick={() => {
-                                    console.log("hello", user);
-                                    // OnSelectConversation(conversation);
                                     onNewConversation(group);
                                 }}
                                 hasUnreadMessage={false}

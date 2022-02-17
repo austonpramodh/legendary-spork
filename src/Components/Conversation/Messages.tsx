@@ -101,7 +101,6 @@ const Messages: React.FunctionComponent<Props> = ({ messages }) => {
         }
 
         if (messageType === "meeting") {
-            console.log("meeting---", message);
             const meetingMessage = message as CometChat.CustomMessage;
             const customData = meetingMessage.getData().customData as {
                 callType: "video";

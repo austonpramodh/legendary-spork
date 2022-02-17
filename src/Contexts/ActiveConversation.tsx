@@ -95,7 +95,6 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                     CometChat.markAsRead(lastMessage);
                 }
 
-                console.log(messages);
                 setState((prevState) => ({
                     ...prevState,
                     isLoading: false,
@@ -249,7 +248,6 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
             return id === receiverId;
         });
 
-        console.log(foundConversation);
         if (foundConversation) return onSelectConversation(foundConversation);
         // Add it to state
         setState((prevState) => ({
