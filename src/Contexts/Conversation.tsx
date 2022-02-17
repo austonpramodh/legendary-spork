@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { CometChat } from "@cometchat-pro/chat";
 import React from "react";
 import { useAuthContext } from "./Auth";
@@ -7,8 +8,8 @@ interface ConversationsListContextData {
     error: unknown;
     conversationsList: CometChat.Conversation[];
     typingUsers: Record<string, boolean>;
-    // eslint-disable-next-line no-unused-vars
     onMessageHandleConversationsListUpdate: (msg: CometChat.BaseMessage) => void;
+    onDeleteConversation: (convo: CometChat.Conversation) => void;
 }
 
 const initialState: ConversationsListContextData = {
@@ -17,6 +18,7 @@ const initialState: ConversationsListContextData = {
     conversationsList: [],
     typingUsers: {},
     onMessageHandleConversationsListUpdate: () => {},
+    onDeleteConversation: () => {},
 };
 
 const ConversationsListContext = React.createContext(initialState);
@@ -166,8 +168,29 @@ export const ConversationsListContextProvider: React.FunctionComponent = ({ chil
         };
     }, [user]);
 
+    const onDeleteConversation = (convo: CometChat.Conversation) => {
+        // Delete the Conversation
+        const conversationWith = convo.getConversationWith();
+        const id = conversationWith instanceof CometChat.User ? conversationWith.getUid() : conversationWith.getGuid();
+
+        CometChat.deleteConversation(id, convo.getConversationType())
+            .then(() => {
+                setState((prevState) => ({
+                    ...prevState,
+                    conversationsList: prevState.conversationsList.filter(
+                        (c) => c.getConversationId() !== convo.getConversationId(),
+                    ),
+                }));
+            })
+            .catch((error) => {
+                console.log("Error deleting the conversation!", error);
+            });
+    };
+
     return (
-        <ConversationsListContext.Provider value={{ ...state, onMessageHandleConversationsListUpdate }}>
+        <ConversationsListContext.Provider
+            value={{ ...state, onMessageHandleConversationsListUpdate, onDeleteConversation }}
+        >
             {children}
         </ConversationsListContext.Provider>
     );

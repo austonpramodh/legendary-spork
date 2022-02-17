@@ -15,6 +15,7 @@ interface ActiveConversationContextData {
     fetchPrevMessages: () => void;
     newConversationReceiver: null | CometChat.User | CometChat.Group;
     onNewConversation: (receiver: CometChat.User | CometChat.Group) => void;
+    onClear: () => void;
 }
 
 const initialState: ActiveConversationContextData = {
@@ -28,6 +29,7 @@ const initialState: ActiveConversationContextData = {
     fetchPrevMessages: () => {},
     newConversationReceiver: null,
     onNewConversation: () => {},
+    onClear: () => {},
 };
 
 const ActiveConversationContext = React.createContext(initialState);
@@ -43,6 +45,8 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
 
     const authState = useAuthContext();
     const { onMessageHandleConversationsListUpdate, conversationsList } = useConversationsListContext();
+
+    const onClear = () => setState(initialState);
 
     const onSelectConversation = (convo: CometChat.Conversation) => {
         if (state.conversation?.getConversationId() === convo.getConversationId()) return;
@@ -261,7 +265,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
 
     return (
         <ActiveConversationContext.Provider
-            value={{ ...state, onSelectConversation, sendMessage, fetchPrevMessages, onNewConversation }}
+            value={{ ...state, onSelectConversation, sendMessage, fetchPrevMessages, onNewConversation, onClear }}
         >
             {children}
         </ActiveConversationContext.Provider>
