@@ -17,14 +17,59 @@ import { useActiveConversationContext } from "../../Contexts/ActiveConversation"
 import Messages from "./Messages";
 import { useCallContext } from "../../Contexts/CallContext";
 
+interface HeaderProps {
+    name: string;
+    icon: string;
+    conversationType: string;
+    conversationWith: CometChat.User | CometChat.Group;
+}
+
+const Header: React.FunctionComponent<HeaderProps> = ({ icon, name, conversationType, conversationWith }) => {
+    const { onStartCall, onInitiateGroupCall } = useCallContext();
+    return (
+        <AppBar position="static" sx={{ mx: "-2" }}>
+            <Container maxWidth="xl">
+                <Toolbar disableGutters>
+                    <Avatar alt={name} src={icon} />
+                    <Typography
+                        variant="body1"
+                        noWrap
+                        component="div"
+                        sx={{ ml: 2, display: { xs: "none", md: "flex" } }}
+                    >
+                        {name}
+                    </Typography>
+                    <Box sx={{ flexGrow: 1, display: "flex" }} />
+                    {conversationType === "user" && (
+                        <IconButton onClick={() => onStartCall(conversationWith as CometChat.User)}>
+                            <Call />
+                        </IconButton>
+                    )}
+                    {conversationType === "group" && (
+                        <IconButton onClick={() => onInitiateGroupCall(conversationWith as CometChat.Group)}>
+                            <VideoCall />
+                        </IconButton>
+                    )}
+                </Toolbar>
+            </Container>
+        </AppBar>
+    );
+};
+
 const Conversation = () => {
-    const { conversation, isLoading, messages, sendMessage, isSendingMessage, fetchPrevMessages } =
-        useActiveConversationContext();
+    const {
+        conversation,
+        isLoading,
+        messages,
+        sendMessage,
+        isSendingMessage,
+        fetchPrevMessages,
+        newConversationReceiver,
+    } = useActiveConversationContext();
     const [inputMessage, setInputMessage] = React.useState("");
     const [inputFile, setInputFile] = React.useState<any>(null);
-    const { onStartCall, onInitiateGroupCall } = useCallContext();
 
-    if (!conversation)
+    if (!conversation && !newConversationReceiver)
         return (
             <Box
                 sx={(theme) => ({
@@ -65,8 +110,9 @@ const Conversation = () => {
             </Box>
         );
 
-    const conversationWith = conversation.getConversationWith();
-    const conversationType = conversation.getConversationType();
+    const conversationWith = (conversation?.getConversationWith() || newConversationReceiver)!;
+    const conversationType =
+        conversation?.getConversationType() || (newConversationReceiver instanceof CometChat.User ? "user" : "group");
 
     const icon =
         conversationType === "group"
@@ -78,7 +124,6 @@ const Conversation = () => {
             : (conversationWith as CometChat.User).getUid();
 
     const onSendMessage = async () => {
-        //
         if (inputFile) {
             const messageType = CometChat.MESSAGE_TYPE.FILE;
             // File type
@@ -101,33 +146,12 @@ const Conversation = () => {
                 border: `1px solid ${theme.palette.divider}`,
             })}
         >
-            <AppBar position="static" sx={{ mx: "-2" }}>
-                <Container maxWidth="xl">
-                    <Toolbar disableGutters>
-                        <Avatar alt={conversationWith.getName()} src={icon} />
-                        <Typography
-                            variant="body1"
-                            noWrap
-                            component="div"
-                            sx={{ ml: 2, display: { xs: "none", md: "flex" } }}
-                        >
-                            {conversationWith.getName()}
-                        </Typography>
-                        <Box sx={{ flexGrow: 1, display: "flex" }} />
-                        {conversationType === "user" && (
-                            <IconButton onClick={() => onStartCall(conversationWith as CometChat.User)}>
-                                <Call />
-                            </IconButton>
-                        )}
-                        {conversationType === "group" && (
-                            <IconButton onClick={() => onInitiateGroupCall(conversationWith as CometChat.Group)}>
-                                <VideoCall />
-                            </IconButton>
-                        )}
-                    </Toolbar>
-                </Container>
-            </AppBar>
-
+            <Header
+                conversationType={conversationType}
+                conversationWith={conversationWith}
+                icon={icon}
+                name={conversationWith.getName()}
+            />
             <Box
                 sx={() => ({
                     flexGrow: 1,
@@ -163,17 +187,13 @@ const Conversation = () => {
                     onFocus={() => {
                         // Send typing even
                         const receiverType =
-                            conversation.getConversationType() === "user"
-                                ? CometChat.RECEIVER_TYPE.USER
-                                : CometChat.RECEIVER_TYPE.GROUP;
+                            conversationType === "user" ? CometChat.RECEIVER_TYPE.USER : CometChat.RECEIVER_TYPE.GROUP;
                         const typingNotification = new CometChat.TypingIndicator(receiverId, receiverType);
                         CometChat.startTyping(typingNotification);
                     }}
                     onBlur={() => {
                         const receiverType =
-                            conversation.getConversationType() === "user"
-                                ? CometChat.RECEIVER_TYPE.USER
-                                : CometChat.RECEIVER_TYPE.GROUP;
+                            conversationType === "user" ? CometChat.RECEIVER_TYPE.USER : CometChat.RECEIVER_TYPE.GROUP;
                         const typingNotification = new CometChat.TypingIndicator(receiverId, receiverType);
                         CometChat.endTyping(typingNotification);
                     }}

@@ -13,6 +13,8 @@ interface ActiveConversationContextData {
     sendMessage: (msg: CometChat.BaseMessage) => void | Promise<void>;
     isSendingMessage: boolean;
     fetchPrevMessages: () => void;
+    newConversationReceiver: null | CometChat.User | CometChat.Group;
+    onNewConversation: (receiver: CometChat.User | CometChat.Group) => void;
 }
 
 const initialState: ActiveConversationContextData = {
@@ -24,6 +26,8 @@ const initialState: ActiveConversationContextData = {
     sendMessage: () => {},
     isSendingMessage: false,
     fetchPrevMessages: () => {},
+    newConversationReceiver: null,
+    onNewConversation: () => {},
 };
 
 const ActiveConversationContext = React.createContext(initialState);
@@ -38,7 +42,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
     const conversationClassRef = React.useRef<CometChat.MessagesRequest | null>(null);
 
     const authState = useAuthContext();
-    const { onMessageHandleConversationsListUpdate } = useConversationsListContext();
+    const { onMessageHandleConversationsListUpdate, conversationsList } = useConversationsListContext();
 
     const onSelectConversation = (convo: CometChat.Conversation) => {
         if (state.conversation?.getConversationId() === convo.getConversationId()) return;
@@ -49,6 +53,7 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
             conversation: convo,
             error: null,
             messages: [],
+            newConversationReceiver: null,
         }));
 
         conversationClassRef.current = null;
@@ -122,6 +127,18 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
                     isSendingMessage: false,
                 };
             });
+            // Swicth the active conversation to new one if its new user conversation
+            if (state.newConversationReceiver) {
+                CometChat.CometChatHelper.getConversationFromMessage(sentMessage)
+                    .then((convo) => {
+                        onSelectConversation(convo);
+                    })
+                    .catch((err) => {
+                        console.log("Error occured while getting convo -", err);
+                        setState(initialState);
+                    });
+            }
+
             onMessageHandleConversationsListUpdate(sentMessage);
         } catch (error) {
             setState((prevState) => ({
@@ -216,8 +233,36 @@ export const ActiveConversationContextProvider: React.FunctionComponent = ({ chi
         };
     }, [authState.values.user, state.conversation]);
 
+    const onNewConversation = (receiver: CometChat.User | CometChat.Group) => {
+        // Check if the conversation already exists, if it does select that
+        const foundConversation = conversationsList.find((convo) => {
+            const convoWith = convo.getConversationWith();
+            const id =
+                convoWith instanceof CometChat.Group
+                    ? (convo.getConversationWith() as CometChat.Group).getGuid()
+                    : (convo.getConversationWith() as CometChat.User).getUid();
+            const receiverId = receiver instanceof CometChat.User ? receiver.getUid() : receiver.getGuid();
+            return id === receiverId;
+        });
+
+        console.log(foundConversation);
+        if (foundConversation) return onSelectConversation(foundConversation);
+        // Add it to state
+        setState((prevState) => ({
+            ...prevState,
+            newConversationReceiver: receiver,
+            conversation: null,
+            error: null,
+            isLoading: false,
+            isSendingMessage: false,
+            messages: [],
+        }));
+    };
+
     return (
-        <ActiveConversationContext.Provider value={{ ...state, onSelectConversation, sendMessage, fetchPrevMessages }}>
+        <ActiveConversationContext.Provider
+            value={{ ...state, onSelectConversation, sendMessage, fetchPrevMessages, onNewConversation }}
+        >
             {children}
         </ActiveConversationContext.Provider>
     );

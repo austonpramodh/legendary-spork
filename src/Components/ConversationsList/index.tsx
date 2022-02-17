@@ -97,7 +97,7 @@ const getMessageText = (msg: CometChat.BaseMessage) => {
 const ConversationsList = () => {
     const { conversationsList, typingUsers } = useConversationsListContext();
 
-    const { onSelectConversation } = useActiveConversationContext();
+    const { onSelectConversation, onNewConversation } = useActiveConversationContext();
 
     const { groups, users } = useUsersGroupsListContext();
 
@@ -191,6 +191,7 @@ const ConversationsList = () => {
                                 onClick={() => {
                                     console.log("hello", user);
                                     // OnSelectConversation(conversation);
+                                    onNewConversation(user);
                                 }}
                                 hasUnreadMessage={false}
                                 lastMessage={user.getStatusMessage()}
@@ -222,6 +223,7 @@ const ConversationsList = () => {
                                 onClick={() => {
                                     console.log("hello", user);
                                     // OnSelectConversation(conversation);
+                                    onNewConversation(group);
                                 }}
                                 hasUnreadMessage={false}
                                 lastMessage={""}
